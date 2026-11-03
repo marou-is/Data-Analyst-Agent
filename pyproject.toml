@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-analyst-agent"
+version = "0.1.0"
+description = "Autonomous Data Analyst Agent: profiling, data quality, anomaly detection and forecasting for time series."
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=3.0,<3.1",
+    "numpy>=2.0",
+    "scikit-learn>=1.5",
+    "pydantic>=2.7",
+    "statsmodels>=0.14",
+    "streamlit>=1.38",
+    "plotly>=5.22",
+    "pyarrow>=16",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --import-mode=importlib"
