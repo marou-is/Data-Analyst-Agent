@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from analyst.contracts import AnalysisReport, Insight, Severity
+from analyst.contracts import AnalysisReport, Insight, RowAnomalyResult, Severity
 
 
 def generate_insights(report: AnalysisReport) -> list[Insight]:
     insights = [_overview(report)]
     insights += _quality(report)
+    if report.row_anomalies is not None and report.row_anomalies.n_anomalies:
+        insights.append(_row_anomaly(report.row_anomalies))
     insights += [_anomaly(r) for r in report.anomalies]
     insights += [_forecast(r) for r in report.forecasts]
     return insights
@@ -44,6 +46,17 @@ def _quality(report: AnalysisReport) -> list[Insight]:
         if i.severity is Severity.ERROR
     ]
     return out
+
+
+def _row_anomaly(result: RowAnomalyResult) -> Insight:
+    top = result.frame[result.frame["is_anomaly"]].nlargest(3, "score")
+    examples = "; ".join(f"row {idx}: {reason}" for idx, reason in top["reason"].items())
+    return Insight(
+        source="anomaly",
+        severity=Severity.WARNING,
+        title=f"{result.n_anomalies} unusual rows ({result.n_anomalies / len(result.frame):.1%}) found by {result.method}",
+        detail=f"Features: {', '.join(result.features)}. Most unusual: {examples}.",
+    )
 
 
 def _anomaly(result) -> Insight:
