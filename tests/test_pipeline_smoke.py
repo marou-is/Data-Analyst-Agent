@@ -25,6 +25,16 @@ def test_infers_spec_without_hints(synthetic):
     assert report.spec.season_length == 48
 
 
+def test_profile_source_accepts_upload_bytes():
+    import io
+
+    from analyst.agent import profile_source
+    from analyst.datasets import SUPERSTORE
+
+    p = profile_source(io.BytesIO(SUPERSTORE.path.read_bytes()), filename="superstore.csv")
+    assert (p.name, p.n_rows, p.n_cols) == ("superstore", 9994, 21)
+
+
 @pytest.mark.skipif(not NYC_TAXI.path.exists(), reason="NYC taxi data not downloaded")
 def test_nyc_taxi_end_to_end():
     report = run_public_dataset("nyc_taxi")

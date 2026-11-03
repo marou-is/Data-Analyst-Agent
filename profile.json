@@ -1,0 +1,698 @@
+{
+  "name": "superstore",
+  "n_rows": 9994,
+  "n_cols": 21,
+  "n_duplicate_rows": 0,
+  "memory_mb": 3.341,
+  "start": "2014-01-03T00:00:00",
+  "end": "2017-12-30T00:00:00",
+  "inferred_freq": null,
+  "columns": [
+    {
+      "name": "Row ID",
+      "dtype": "int64",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 9994,
+      "role": "identifier",
+      "pct_unique": 1.0,
+      "mean": null,
+      "std": null,
+      "min": 1.0,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": 9994.0,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Order ID",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 5009,
+      "role": "identifier",
+      "pct_unique": 0.5012007204322594,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Order Date",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 1237,
+      "role": "datetime",
+      "pct_unique": 0.12377426455873525,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": "2014-01-03T00:00:00",
+      "max_date": "2017-12-30T00:00:00",
+      "top_values": []
+    },
+    {
+      "name": "Ship Date",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 1334,
+      "role": "datetime",
+      "pct_unique": 0.1334800880528317,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": "2014-01-07T00:00:00",
+      "max_date": "2018-01-05T00:00:00",
+      "top_values": []
+    },
+    {
+      "name": "Ship Mode",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 4,
+      "role": "categorical",
+      "pct_unique": 0.00040024014408645187,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "Standard Class",
+          "count": 5968
+        },
+        {
+          "value": "Second Class",
+          "count": 1945
+        },
+        {
+          "value": "First Class",
+          "count": 1538
+        },
+        {
+          "value": "Same Day",
+          "count": 543
+        }
+      ]
+    },
+    {
+      "name": "Customer ID",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 793,
+      "role": "identifier",
+      "pct_unique": 0.07934760856513909,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Customer Name",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 793,
+      "role": "categorical",
+      "pct_unique": 0.07934760856513909,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "William Brown",
+          "count": 37
+        },
+        {
+          "value": "Matt Abelman",
+          "count": 34
+        },
+        {
+          "value": "John Lee",
+          "count": 34
+        },
+        {
+          "value": "Paul Prost",
+          "count": 34
+        },
+        {
+          "value": "Jonathan Doherty",
+          "count": 32
+        }
+      ]
+    },
+    {
+      "name": "Segment",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 3,
+      "role": "categorical",
+      "pct_unique": 0.0003001801080648389,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "Consumer",
+          "count": 5191
+        },
+        {
+          "value": "Corporate",
+          "count": 3020
+        },
+        {
+          "value": "Home Office",
+          "count": 1783
+        }
+      ]
+    },
+    {
+      "name": "Country",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 1,
+      "role": "constant",
+      "pct_unique": 0.00010006003602161297,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "United States",
+          "count": 9994
+        }
+      ]
+    },
+    {
+      "name": "City",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 531,
+      "role": "categorical",
+      "pct_unique": 0.05313187912747649,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "New York City",
+          "count": 915
+        },
+        {
+          "value": "Los Angeles",
+          "count": 747
+        },
+        {
+          "value": "Philadelphia",
+          "count": 537
+        },
+        {
+          "value": "San Francisco",
+          "count": 510
+        },
+        {
+          "value": "Seattle",
+          "count": 428
+        }
+      ]
+    },
+    {
+      "name": "State",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 49,
+      "role": "categorical",
+      "pct_unique": 0.004902941765059035,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "California",
+          "count": 2001
+        },
+        {
+          "value": "New York",
+          "count": 1128
+        },
+        {
+          "value": "Texas",
+          "count": 985
+        },
+        {
+          "value": "Pennsylvania",
+          "count": 587
+        },
+        {
+          "value": "Washington",
+          "count": 506
+        }
+      ]
+    },
+    {
+      "name": "Postal Code",
+      "dtype": "int64",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 631,
+      "role": "identifier",
+      "pct_unique": 0.06313788272963779,
+      "mean": null,
+      "std": null,
+      "min": 1040.0,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": 99301.0,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Region",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 4,
+      "role": "categorical",
+      "pct_unique": 0.00040024014408645187,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "West",
+          "count": 3203
+        },
+        {
+          "value": "East",
+          "count": 2848
+        },
+        {
+          "value": "Central",
+          "count": 2323
+        },
+        {
+          "value": "South",
+          "count": 1620
+        }
+      ]
+    },
+    {
+      "name": "Product ID",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 1862,
+      "role": "identifier",
+      "pct_unique": 0.18631178707224336,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Category",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 3,
+      "role": "categorical",
+      "pct_unique": 0.0003001801080648389,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "Office Supplies",
+          "count": 6026
+        },
+        {
+          "value": "Furniture",
+          "count": 2121
+        },
+        {
+          "value": "Technology",
+          "count": 1847
+        }
+      ]
+    },
+    {
+      "name": "Sub-Category",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 17,
+      "role": "categorical",
+      "pct_unique": 0.0017010206123674204,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "Binders",
+          "count": 1523
+        },
+        {
+          "value": "Paper",
+          "count": 1370
+        },
+        {
+          "value": "Furnishings",
+          "count": 957
+        },
+        {
+          "value": "Phones",
+          "count": 889
+        },
+        {
+          "value": "Storage",
+          "count": 846
+        }
+      ]
+    },
+    {
+      "name": "Product Name",
+      "dtype": "str",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 1850,
+      "role": "text",
+      "pct_unique": 0.185111066639984,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "q25": null,
+      "median": null,
+      "q75": null,
+      "max": null,
+      "n_zeros": null,
+      "n_negative": null,
+      "n_outliers": null,
+      "min_date": null,
+      "max_date": null,
+      "top_values": [
+        {
+          "value": "Staple envelope",
+          "count": 48
+        },
+        {
+          "value": "Easy-staple paper",
+          "count": 46
+        },
+        {
+          "value": "Staples",
+          "count": 46
+        },
+        {
+          "value": "Avery Non-Stick Binders",
+          "count": 20
+        },
+        {
+          "value": "Staples in misc. colors",
+          "count": 19
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "dtype": "float64",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 5825,
+      "role": "numeric",
+      "pct_unique": 0.5828497098258956,
+      "mean": 229.85800083049827,
+      "std": 623.2451005086808,
+      "min": 0.444,
+      "q25": 17.28,
+      "median": 54.489999999999995,
+      "q75": 209.94,
+      "max": 22638.48,
+      "n_zeros": 0,
+      "n_negative": 0,
+      "n_outliers": 1167,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Quantity",
+      "dtype": "int64",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 14,
+      "role": "numeric",
+      "pct_unique": 0.0014008405043025814,
+      "mean": 3.789573744246548,
+      "std": 2.2251096911414,
+      "min": 1.0,
+      "q25": 2.0,
+      "median": 3.0,
+      "q75": 5.0,
+      "max": 14.0,
+      "n_zeros": 0,
+      "n_negative": 0,
+      "n_outliers": 170,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Discount",
+      "dtype": "float64",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 12,
+      "role": "numeric",
+      "pct_unique": 0.0012007204322593557,
+      "mean": 0.1562027216329798,
+      "std": 0.20645196782571615,
+      "min": 0.0,
+      "q25": 0.0,
+      "median": 0.2,
+      "q75": 0.2,
+      "max": 0.8,
+      "n_zeros": 4798,
+      "n_negative": 0,
+      "n_outliers": 856,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    },
+    {
+      "name": "Profit",
+      "dtype": "float64",
+      "n_missing": 0,
+      "pct_missing": 0.0,
+      "n_unique": 7287,
+      "role": "numeric",
+      "pct_unique": 0.7291374824894937,
+      "mean": 28.65689630778467,
+      "std": 234.2601076909573,
+      "min": -6599.978,
+      "q25": 1.72875,
+      "median": 8.6665,
+      "q75": 29.364,
+      "max": 8399.976,
+      "n_zeros": 65,
+      "n_negative": 1871,
+      "n_outliers": 1881,
+      "min_date": null,
+      "max_date": null,
+      "top_values": []
+    }
+  ],
+  "quality": {
+    "issues": [
+      {
+        "check": "constant_column",
+        "severity": "info",
+        "message": "'Country' has a single value ('United States') and carries no information",
+        "column": "Country",
+        "n_affected": 0
+      },
+      {
+        "check": "lost_leading_zeros",
+        "severity": "warning",
+        "message": "449 values of code column 'Postal Code' have fewer than 5 digits; leading zeros were probably lost (store it as text)",
+        "column": "Postal Code",
+        "n_affected": 449
+      },
+      {
+        "check": "outliers",
+        "severity": "info",
+        "message": "1167 values (11.7%) in 'Sales' lie outside 1.5 x IQR",
+        "column": "Sales",
+        "n_affected": 1167
+      },
+      {
+        "check": "outliers",
+        "severity": "info",
+        "message": "170 values (1.7%) in 'Quantity' lie outside 1.5 x IQR",
+        "column": "Quantity",
+        "n_affected": 170
+      },
+      {
+        "check": "outliers",
+        "severity": "info",
+        "message": "856 values (8.6%) in 'Discount' lie outside 1.5 x IQR",
+        "column": "Discount",
+        "n_affected": 856
+      },
+      {
+        "check": "outliers",
+        "severity": "info",
+        "message": "1881 values (18.8%) in 'Profit' lie outside 1.5 x IQR",
+        "column": "Profit",
+        "n_affected": 1881
+      },
+      {
+        "check": "near_duplicate_rows",
+        "severity": "warning",
+        "message": "1 rows are identical to another row except for the unique key ['Row ID']",
+        "column": null,
+        "n_affected": 1
+      }
+    ],
+    "score": 80.0
+  }
+}

@@ -3,7 +3,11 @@ import pytest
 from pydantic import ValidationError
 
 from analyst.contracts import (
+    AggregateResult,
+    AggregationSpec,
     AnomalyResult,
+    MetricSpec,
+    RowAnomalyResult,
     DatasetSpec,
     ForecastResult,
     QualityIssue,
@@ -42,6 +46,34 @@ def test_quality_report_passed():
     err = QualityIssue(check="c", severity=Severity.ERROR, message="m")
     assert QualityReport(issues=[warn], score=90).passed
     assert not QualityReport(issues=[warn, err], score=60).passed
+
+
+def test_metric_spec_requires_column_unless_count():
+    MetricSpec(name="n_rows", agg="count")
+    with pytest.raises(ValidationError):
+        MetricSpec(name="sales", agg="sum")
+
+
+def test_aggregate_result_shapes():
+    spec = AggregationSpec(timestamp_col="Order Date", metrics=[MetricSpec(name="sales", agg="sum", column="Sales")])
+    flat = pd.DataFrame({"sales": [1.0, 2.0, 3.0, 4.0]}, index=IDX)
+    assert AggregateResult(spec=spec, data=flat).frame() is flat
+    with pytest.raises(ValidationError):
+        AggregateResult(spec=spec, data=flat.astype("int64"))
+
+    grouped_spec = spec.model_copy(update={"group_by": "Region"})
+    grouped = pd.DataFrame({"sales": [1.0, 2.0, 3.0, 4.0], "group": ["E", "W", "E", "W"]}, index=IDX)
+    result = AggregateResult(spec=grouped_spec, data=grouped, groups=["E", "W"])
+    assert result.frame("W")["sales"].tolist() == [2.0, 4.0]
+    with pytest.raises(ValidationError):
+        AggregateResult(spec=grouped_spec, data=flat)
+
+
+def test_row_anomaly_frame():
+    frame = pd.DataFrame({"score": [0.1, 0.9], "is_anomaly": [False, True], "reason": ["", "discount 80%"]})
+    assert RowAnomalyResult(method="m", frame=frame).n_anomalies == 1
+    with pytest.raises(ValidationError):
+        RowAnomalyResult(method="m", frame=frame.drop(columns="reason"))
 
 
 def test_assert_clean_frame():

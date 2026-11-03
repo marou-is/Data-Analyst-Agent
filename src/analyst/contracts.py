@@ -21,8 +21,19 @@ Stage signatures (implemented by the workstreams)
 * ``data.quality.check_quality(raw, spec) -> QualityReport``     time-series checks
 * ``data.clean.clean(raw, spec) -> CleanResult``
 * ``data.profile.profile(clean_df, spec) -> DatasetProfile``     time-series profile
+* ``data.clean.clean_table(raw, profile) -> CleanResult``        clean *table*, see below
+* ``data.aggregate.default_aggregation(profile, freq="D") -> AggregationSpec``
+* ``data.aggregate.aggregate(table, spec) -> AggregateResult``  transactions -> time series
 * ``ml.anomaly.detect_anomalies(clean_df, spec, target_col, config, labels=None) -> AnomalyResult``
+* ``ml.row_anomaly.detect_row_anomalies(table, profile, config) -> RowAnomalyResult``
 * ``ml.forecast.forecast(clean_df, spec, target_col, config) -> ForecastResult``
+* ``agent.load_source(source, filename=None, sheet_name=0) -> pd.DataFrame``  raw frame
+* ``agent.profile_source(source, filename=None, sheet_name=0) -> DatasetProfile``
+
+* A *clean table* (from ``clean_table``) keeps the raw columns and the raw row index
+  (dropped rows are simply absent, so results can be traced back to the file);
+  datetime-role columns are ``datetime64``, numeric-role columns are numeric, and
+  code identifiers that lost leading zeros are zero-padded strings.
 """
 
 from __future__ import annotations
@@ -35,8 +46,10 @@ import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 TIMESTAMP = "timestamp"
+GROUP = "group"
 
 ANOMALY_COLUMNS = ("value", "score", "is_anomaly")
+ROW_ANOMALY_COLUMNS = ("score", "is_anomaly", "reason")
 FORECAST_COLUMNS = ("yhat", "yhat_lower", "yhat_upper")
 BACKTEST_COLUMNS = ("y", "yhat")
 
@@ -92,6 +105,11 @@ class AnalysisConfig(_Model):
     forecast_model: str = "seasonal_naive"
     forecast_horizon: int = Field(default=48, gt=0)
     forecast_params: dict[str, Any] = Field(default_factory=dict)
+    aggregation_freq: str = "D"
+    """Period used when transactional data is aggregated to a time series."""
+    row_anomaly_method: str = "isolation_forest"
+    row_anomaly_contamination: float = Field(default=0.01, gt=0, lt=0.5)
+    row_anomaly_params: dict[str, Any] = Field(default_factory=dict)
 
 
 class CleaningStep(_Model):
@@ -256,6 +274,86 @@ class ForecastResult(_Model):
         return self
 
 
+class MetricSpec(_Model):
+    name: str
+    """Output column name in the aggregated frame, e.g. ``"sales"`` or ``"n_orders"``."""
+    agg: Literal["sum", "mean", "median", "min", "max", "count", "nunique"]
+    column: str | None = None
+    """Source column; ``None`` only for ``agg="count"`` (number of rows)."""
+
+    @model_validator(mode="after")
+    def _column_required(self) -> MetricSpec:
+        if self.column is None and self.agg != "count":
+            raise ValueError(f"metric {self.name!r} needs a source column for agg={self.agg!r}")
+        return self
+
+
+class AggregationSpec(_Model):
+    timestamp_col: str
+    freq: str = "D"
+    metrics: list[MetricSpec] = Field(min_length=1)
+    group_by: str | None = None
+
+
+class AggregateResult(_Model):
+    spec: AggregationSpec
+    data: pd.DataFrame
+    """``DatetimeIndex`` named ``timestamp``; one float64 column per metric name.
+    Without ``group_by`` the index is a regular, gap-free range (a clean frame).
+    With ``group_by`` there is an extra ``group`` column and one row per
+    (period, group); use ``frame(group)`` to get a clean frame for one group."""
+    groups: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _shape(self) -> AggregateResult:
+        names = tuple(m.name for m in self.spec.metrics)
+        _check_frame(self.data, names + ((GROUP,) if self.spec.group_by else ()), "AggregateResult.data")
+        if self.data.index.name != TIMESTAMP:
+            raise ValueError(f"AggregateResult.data index must be named {TIMESTAMP!r}")
+        non_float = [n for n in names if self.data[n].dtype != "float64"]
+        if non_float:
+            raise ValueError(f"aggregated metrics must be float64: {non_float}")
+        return self
+
+    @property
+    def metric_names(self) -> list[str]:
+        return [m.name for m in self.spec.metrics]
+
+    def frame(self, group: str | None = None) -> pd.DataFrame:
+        if self.spec.group_by is None:
+            return self.data
+        if group is None:
+            raise ValueError("aggregation is grouped; pass a group name")
+        return self.data.loc[self.data[GROUP] == group, self.metric_names]
+
+
+class RowAnomalyResult(_Model):
+    method: str
+    frame: pd.DataFrame
+    """Indexed like the clean table; columns ``score`` (higher is more anomalous),
+    ``is_anomaly`` (bool) and ``reason`` (short human-readable explanation,
+    empty string for normal rows)."""
+    features: list[str] = Field(default_factory=list)
+    params: dict[str, Any] = Field(default_factory=dict)
+    metrics: dict[str, float] = Field(default_factory=dict)
+
+    @field_validator("frame")
+    @classmethod
+    def _frame_shape(cls, df: Any) -> pd.DataFrame:
+        if not isinstance(df, pd.DataFrame):
+            raise ValueError("RowAnomalyResult.frame must be a pandas DataFrame")
+        missing = [c for c in ROW_ANOMALY_COLUMNS if c not in df.columns]
+        if missing:
+            raise ValueError(f"RowAnomalyResult.frame is missing columns {missing}")
+        if df["is_anomaly"].dtype != bool:
+            raise ValueError("RowAnomalyResult.frame['is_anomaly'] must be bool")
+        return df
+
+    @property
+    def n_anomalies(self) -> int:
+        return int(self.frame["is_anomaly"].sum())
+
+
 class Insight(_Model):
     title: str
     detail: str
@@ -272,6 +370,10 @@ class AnalysisReport(_Model):
     anomalies: list[AnomalyResult] = Field(default_factory=list)
     forecasts: list[ForecastResult] = Field(default_factory=list)
     insights: list[Insight] = Field(default_factory=list)
+    table_profile: DatasetProfile | None = None
+    """Profile of the uploaded table as loaded (before cleaning/aggregation)."""
+    aggregation: AggregateResult | None = None
+    row_anomalies: RowAnomalyResult | None = None
     warnings: list[str] = Field(default_factory=list)
     """Non-fatal stage failures, e.g. a forecast model that raised."""
     created_at: datetime = Field(default_factory=datetime.now)

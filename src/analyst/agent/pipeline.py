@@ -6,10 +6,10 @@ from typing import IO
 import pandas as pd
 
 from analyst.agent.insights import generate_insights
-from analyst.contracts import AnalysisConfig, AnalysisReport, DatasetSpec, assert_clean_frame
+from analyst.contracts import AnalysisConfig, AnalysisReport, DatasetProfile, DatasetSpec, assert_clean_frame
 from analyst.data.clean import clean
 from analyst.data.ingest import infer_spec, load_dataset
-from analyst.data.profile import profile
+from analyst.data.profile import profile, profile_dataset
 from analyst.data.quality import check_quality
 from analyst.datasets import Window, get_dataset, label_series
 from analyst.ml.anomaly import detect_anomalies
@@ -27,7 +27,9 @@ def run_analysis(
     recorded in ``report.warnings`` so the rest of the report is still usable."""
     config = config or AnalysisConfig()
     raw = source if isinstance(source, pd.DataFrame) else load_dataset(source, filename=filename)
-    spec = spec or infer_spec(raw, name=Path(filename or str(getattr(source, "name", "dataset"))).stem)
+    name = _source_name(source, filename)
+    spec = spec or infer_spec(raw, name=name)
+    table_profile = profile_dataset(raw, name=spec.name)
 
     quality = check_quality(raw, spec)
     cleaning = clean(raw, spec)
@@ -55,10 +57,35 @@ def run_analysis(
 
     report = AnalysisReport(
         spec=spec, config=config, quality=quality, cleaning=cleaning, profile=data_profile,
-        anomalies=anomalies, forecasts=forecasts, warnings=warnings,
+        anomalies=anomalies, forecasts=forecasts, warnings=warnings, table_profile=table_profile,
     )
     report.insights = generate_insights(report)
     return report
+
+
+def load_source(
+    source: str | Path | IO[bytes], filename: str | None = None, sheet_name: str | int = 0
+) -> pd.DataFrame:
+    """Load a CSV/Excel/Parquet file as a raw frame (for display and charts)."""
+    return load_dataset(source, filename=filename, sheet_name=sheet_name)
+
+
+def profile_source(
+    source: str | Path | IO[bytes] | pd.DataFrame,
+    filename: str | None = None,
+    sheet_name: str | int = 0,
+) -> DatasetProfile:
+    """Load any CSV/Excel/Parquet table (or DataFrame) and return its profile."""
+    raw = source if isinstance(source, pd.DataFrame) else load_dataset(source, filename=filename, sheet_name=sheet_name)
+    return profile_dataset(raw, name=_source_name(source, filename))
+
+
+def _source_name(source, filename: str | None) -> str:
+    if filename:
+        return Path(filename).stem
+    if isinstance(source, (str, Path)):
+        return Path(source).stem
+    return Path(str(getattr(source, "name", "dataset"))).stem
 
 
 def run_public_dataset(name: str, config: AnalysisConfig | None = None) -> AnalysisReport:
