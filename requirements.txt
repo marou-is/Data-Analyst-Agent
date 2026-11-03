@@ -1,5 +1,6 @@
 # Pinned versions used by all workstreams. Install with: pip install -r requirements.txt
 numpy==2.4.6
+openpyxl==3.1.5
 pandas==3.0.6
 plotly==7.1.0
 pyarrow==26.0.1

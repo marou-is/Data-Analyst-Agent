@@ -14,11 +14,13 @@ Frame conventions
 
 Stage signatures (implemented by the workstreams)
 -------------------------------------------------
-* ``data.ingest.load_dataset(source) -> pd.DataFrame``            raw frame
+* ``data.ingest.load_dataset(source, filename=None, sheet_name=0) -> pd.DataFrame``  raw frame (CSV/Excel/Parquet)
 * ``data.ingest.infer_spec(raw, name) -> DatasetSpec``
-* ``data.quality.check_quality(raw, spec) -> QualityReport``
+* ``data.profile.profile_dataset(raw, name) -> DatasetProfile``   any table, includes quality
+* ``data.quality.check_table_quality(raw, columns, n_duplicate_rows) -> QualityReport``
+* ``data.quality.check_quality(raw, spec) -> QualityReport``     time-series checks
 * ``data.clean.clean(raw, spec) -> CleanResult``
-* ``data.profile.profile(clean_df, spec) -> DatasetProfile``
+* ``data.profile.profile(clean_df, spec) -> DatasetProfile``     time-series profile
 * ``ml.anomaly.detect_anomalies(clean_df, spec, target_col, config, labels=None) -> AnomalyResult``
 * ``ml.forecast.forecast(clean_df, spec, target_col, config) -> ForecastResult``
 """
@@ -105,28 +107,6 @@ class CleanResult(_Model):
     rows_after: int = Field(ge=0)
 
 
-class ColumnProfile(_Model):
-    name: str
-    dtype: str
-    n_missing: int = Field(ge=0)
-    pct_missing: float = Field(ge=0, le=1)
-    n_unique: int = Field(ge=0)
-    mean: float | None = None
-    std: float | None = None
-    min: float | None = None
-    median: float | None = None
-    max: float | None = None
-
-
-class DatasetProfile(_Model):
-    n_rows: int = Field(ge=0)
-    n_cols: int = Field(ge=0)
-    start: datetime | None = None
-    end: datetime | None = None
-    inferred_freq: str | None = None
-    columns: list[ColumnProfile] = Field(default_factory=list)
-
-
 class Severity(str, Enum):
     INFO = "info"
     WARNING = "warning"
@@ -149,6 +129,75 @@ class QualityReport(_Model):
     @property
     def passed(self) -> bool:
         return not any(i.severity is Severity.ERROR for i in self.issues)
+
+
+class ColumnRole(str, Enum):
+    """Semantic role of a column, independent of its storage dtype."""
+
+    IDENTIFIER = "identifier"
+    DATETIME = "datetime"
+    NUMERIC = "numeric"
+    CATEGORICAL = "categorical"
+    BOOLEAN = "boolean"
+    TEXT = "text"
+    CONSTANT = "constant"
+    EMPTY = "empty"
+
+
+class ValueCount(_Model):
+    value: str
+    count: int = Field(ge=0)
+
+
+class ColumnProfile(_Model):
+    name: str
+    dtype: str
+    n_missing: int = Field(ge=0)
+    pct_missing: float = Field(ge=0, le=1)
+    n_unique: int = Field(ge=0)
+    role: ColumnRole | None = None
+    pct_unique: float | None = Field(default=None, ge=0, le=1)
+    mean: float | None = None
+    std: float | None = None
+    min: float | None = None
+    q25: float | None = None
+    median: float | None = None
+    q75: float | None = None
+    max: float | None = None
+    n_zeros: int | None = None
+    n_negative: int | None = None
+    n_outliers: int | None = None
+    """Values outside 1.5 * IQR of the quartiles (numeric columns only)."""
+    min_date: datetime | None = None
+    max_date: datetime | None = None
+    top_values: list[ValueCount] = Field(default_factory=list)
+
+
+class DatasetProfile(_Model):
+    """Structured, JSON-serialisable description of a dataset.
+
+    Small enough to be passed to an LLM as context and stored in analysis history.
+    """
+
+    name: str = "dataset"
+    n_rows: int = Field(ge=0)
+    n_cols: int = Field(ge=0)
+    n_duplicate_rows: int = Field(default=0, ge=0)
+    memory_mb: float | None = None
+    start: datetime | None = None
+    end: datetime | None = None
+    inferred_freq: str | None = None
+    columns: list[ColumnProfile] = Field(default_factory=list)
+    quality: QualityReport | None = None
+
+    def column(self, name: str) -> ColumnProfile:
+        for col in self.columns:
+            if col.name == name:
+                return col
+        raise KeyError(name)
+
+    def columns_with_role(self, role: ColumnRole) -> list[str]:
+        return [c.name for c in self.columns if c.role is role]
 
 
 class AnomalyResult(_Model):

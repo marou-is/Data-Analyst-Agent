@@ -16,6 +16,7 @@ dependencies = [
     "streamlit>=1.38",
     "plotly>=5.22",
     "pyarrow>=16",
+    "openpyxl>=3.1",
 ]
 
 [project.optional-dependencies]

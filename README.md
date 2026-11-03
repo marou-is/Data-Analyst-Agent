@@ -1,12 +1,16 @@
 # Autonomous Data Analyst Agent
 
-Given a time-series dataset (CSV/Parquet), the agent checks data quality, cleans and
-profiles it, detects anomalies, forecasts ahead, and writes plain-language insights,
-all rendered in a Streamlit dashboard.
+Businesses spend significant time analysing datasets, finding trends and writing reports.
+This agent analyses business data (CSV/Excel), answers questions in natural language,
+detects anomalies, generates insights and automates recurring analyses.
 
-Demo dataset: [NYC taxi passengers](https://github.com/numenta/NAB/blob/master/data/realKnownCause/nyc_taxi.csv)
-from the Numenta Anomaly Benchmark (30-minute buckets, Jul 2014 - Jan 2015, 5 labelled
-anomaly windows: NYC marathon, Thanksgiving, Christmas, New Year, blizzard).
+Datasets:
+
+* **Primary:** [Sample Superstore](https://huggingface.co/datasets/An-j96/SuperstoreData)
+  (`data/raw/superstore.csv`, GPL-2.0): 9,994 US retail order lines, 2014-2017.
+* **ML benchmark:** [NYC taxi passengers](https://github.com/numenta/NAB/blob/master/data/realKnownCause/nyc_taxi.csv)
+  from the Numenta Anomaly Benchmark, with 5 labelled anomaly windows, used to evaluate
+  anomaly detectors against ground truth.
 
 ## Quick start
 
@@ -14,8 +18,22 @@ anomaly windows: NYC marathon, Thanksgiving, Christmas, New Year, blizzard).
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements.txt
 .\.venv\Scripts\python -m pytest
+.\.venv\Scripts\python -m analyst.data.profile data\raw\superstore.csv --json profile.json
 .\.venv\Scripts\streamlit run src/analyst/dashboard/app.py
 ```
+
+## Roadmap
+
+| # | Milestone | Package | Status |
+|---|---|---|---|
+| 1 | Scope, dataset, architecture, shared contracts | `contracts.py`, `datasets.py` | done |
+| 2 | Ingestion (CSV/Excel/Parquet) and data profiling | `data/` | done |
+| 3 | Cleaning + aggregation of transactions to time series; ML anomaly detection with evaluation | `data/`, `ml/` | next |
+| 4 | Agent: tool-calling LLM over profiling/query/chart/anomaly tools; written report | `agent/` | |
+| 5 | Dashboard (upload, profile, Q&A, anomalies, report); SQLite analysis history; APScheduler jobs | `dashboard/`, `storage/`, `automation/` | |
+| 6 | Testing, documentation, demo | all | |
+
+Later: sales forecasting, scheduled analyses, automated alerts, SQL database sources.
 
 ## Architecture
 
@@ -55,7 +73,21 @@ A workstream branch is merged only when, on top of current `main`:
 
 Branches are merged one at a time (data, then ml, then dashboard) and the gate is re-run after each.
 
-## Current baseline (Phase 0, NYC taxi)
+## Data profiling
+
+`analyst.data.profile.profile_dataset(raw)` returns a JSON-serialisable `DatasetProfile`:
+per column the semantic role (identifier, datetime, numeric, categorical, boolean, text,
+constant, empty), missing/unique counts, numeric distribution (quartiles, zeros, negatives,
+IQR outliers), date range or top values, plus a `QualityReport`. Quality checks: missing
+values, empty and constant columns, duplicate and near-duplicate rows (identical except for
+a unique key), codes that lost leading zeros, numbers stored as text, categories differing
+only by case/whitespace, outliers.
+
+On Superstore it finds: `Country` is constant, `Postal Code` was stored as a number so 449
+order lines with zip codes starting with 0 (New England, New Jersey) lost that digit, 1 order line is duplicated under a different
+`Row ID`, and 1,871 order lines (18.7%) are loss-making.
+
+## Current ML baseline (NYC taxi)
 
 | Stage | Method | Result |
 |---|---|---|

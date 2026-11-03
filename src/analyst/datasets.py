@@ -50,6 +50,28 @@ NYC_TAXI = PublicDataset(
 )
 
 REGISTRY: dict[str, PublicDataset] = {NYC_TAXI.name: NYC_TAXI}
+"""Time-series datasets runnable through ``agent.run_public_dataset``."""
+
+
+@dataclass(frozen=True)
+class TabularDataset:
+    name: str
+    path: Path
+    description: str
+    source_url: str
+    license: str
+
+
+SUPERSTORE = TabularDataset(
+    name="superstore",
+    path=RAW_DIR / "superstore.csv",
+    description=(
+        "Tableau Sample Superstore: 9,994 US retail order lines (2014-2017) with order/ship "
+        "dates, customer, segment, region, product category, sales, quantity, discount and profit."
+    ),
+    source_url="https://huggingface.co/datasets/An-j96/SuperstoreData",
+    license="GPL-2.0",
+)
 
 
 def get_dataset(name: str) -> PublicDataset:
