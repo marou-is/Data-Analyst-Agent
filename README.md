@@ -29,7 +29,7 @@ python -m venv .venv
 | 1 | Scope, dataset, architecture, shared contracts | `contracts.py`, `datasets.py` | done |
 | 2 | Ingestion (CSV/Excel/Parquet) and data profiling | `data/` | done |
 | 3 | Cleaning + aggregation of transactions to time series; ML anomaly detection with evaluation | `data/`, `ml/` | next |
-| 4 | Agent: tool-calling LLM over profiling/query/chart/anomaly tools; written report | `agent/` | |
+| 4 | Agent: LangGraph + Gemini tool calling over profiling/query/chart/anomaly tools; written report | `agent/` | |
 | 5 | Dashboard (upload, profile, Q&A, anomalies, report); SQLite analysis history; APScheduler jobs | `dashboard/`, `storage/`, `automation/` | |
 | 6 | Testing, documentation, demo | all | |
 
