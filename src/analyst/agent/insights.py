@@ -15,10 +15,16 @@ def generate_insights(report: AnalysisReport) -> list[Insight]:
 
 def _overview(report: AnalysisReport) -> Insight:
     p = report.profile
+    detail = f"From {p.start:%Y-%m-%d} to {p.end:%Y-%m-%d}, frequency {p.inferred_freq or 'unknown'}."
+    if report.aggregation is not None and report.table_profile is not None:
+        detail = (
+            f"Aggregated from {report.table_profile.n_rows:,} rows by "
+            f"{report.aggregation.spec.timestamp_col!r}. " + detail
+        )
     return Insight(
         source="profile",
         title=f"{p.n_rows:,} observations of {', '.join(report.spec.target_cols)}",
-        detail=f"From {p.start} to {p.end}, frequency {p.inferred_freq or 'unknown'}.",
+        detail=detail,
     )
 
 

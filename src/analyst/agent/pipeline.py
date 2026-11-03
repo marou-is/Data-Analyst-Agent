@@ -6,14 +6,20 @@ from typing import IO
 import pandas as pd
 
 from analyst.agent.insights import generate_insights
-from analyst.contracts import AnalysisConfig, AnalysisReport, DatasetProfile, DatasetSpec, assert_clean_frame
-from analyst.data.clean import clean
+from analyst.contracts import (
+    TIMESTAMP, AggregateResult, AnalysisConfig, AnalysisReport, CleaningStep, CleanResult, DatasetProfile,
+    DatasetSpec, assert_clean_frame,
+)
+from analyst.data.aggregate import aggregate, default_aggregation
+from analyst.data.clean import clean, clean_table
 from analyst.data.ingest import infer_spec, load_dataset
 from analyst.data.profile import profile, profile_dataset
 from analyst.data.quality import check_quality
 from analyst.datasets import Window, get_dataset, label_series
 from analyst.ml.anomaly import detect_anomalies
 from analyst.ml.forecast import forecast
+
+TRANSACTIONAL_UNIQUE_RATIO = 0.9
 
 
 def run_analysis(
@@ -31,8 +37,13 @@ def run_analysis(
     spec = spec or infer_spec(raw, name=name)
     table_profile = profile_dataset(raw, name=spec.name)
 
-    quality = check_quality(raw, spec)
-    cleaning = clean(raw, spec)
+    aggregation = None
+    if is_transactional(raw, spec):
+        aggregation, spec, cleaning = _aggregate_transactions(raw, spec, table_profile, config)
+        quality = table_profile.quality
+    else:
+        quality = check_quality(raw, spec)
+        cleaning = clean(raw, spec)
     assert_clean_frame(cleaning.data, spec)
     data_profile = profile(cleaning.data, spec)
 
@@ -58,9 +69,39 @@ def run_analysis(
     report = AnalysisReport(
         spec=spec, config=config, quality=quality, cleaning=cleaning, profile=data_profile,
         anomalies=anomalies, forecasts=forecasts, warnings=warnings, table_profile=table_profile,
+        aggregation=aggregation,
     )
     report.insights = generate_insights(report)
     return report
+
+
+def is_transactional(raw: pd.DataFrame, spec: DatasetSpec) -> bool:
+    """True when many rows share a timestamp (e.g. order lines), so the table must be
+    aggregated per period rather than de-duplicated."""
+    ts = raw[spec.timestamp_col].dropna()
+    return len(ts) > 0 and ts.nunique() < TRANSACTIONAL_UNIQUE_RATIO * len(ts)
+
+
+def _aggregate_transactions(
+    raw: pd.DataFrame, spec: DatasetSpec, table_profile: DatasetProfile, config: AnalysisConfig
+) -> tuple[AggregateResult, DatasetSpec, CleanResult]:
+    table = clean_table(raw, table_profile)
+    agg_spec = default_aggregation(table_profile, freq=config.aggregation_freq)
+    agg_spec = agg_spec.model_copy(update={"timestamp_col": spec.timestamp_col})
+    aggregation = aggregate(table.data, agg_spec)
+
+    targets = [m.name for m in agg_spec.metrics if m.column in spec.target_cols] or aggregation.metric_names
+    ts_spec = DatasetSpec(name=spec.name, timestamp_col=TIMESTAMP, target_cols=targets, freq=config.aggregation_freq)
+    series = clean(aggregation.data.reset_index(), ts_spec)
+    step = CleaningStep(
+        name="aggregate", rows_affected=table.rows_after,
+        description=f"Aggregated {table.rows_after:,} rows into {len(aggregation.data):,} '{agg_spec.freq}' periods by {spec.timestamp_col!r}",
+    )
+    cleaning = CleanResult(
+        data=series.data, steps=[*table.steps, step, *series.steps],
+        rows_before=len(raw), rows_after=len(series.data),
+    )
+    return aggregation, ts_spec, cleaning
 
 
 def load_source(
@@ -94,12 +135,23 @@ def run_public_dataset(name: str, config: AnalysisConfig | None = None) -> Analy
 
 
 def infer_season_length(freq: str | None) -> int | None:
-    """Daily cycle for sub-daily data, weekly cycle for daily data, else unknown."""
+    """Daily cycle for sub-daily data, weekly for daily, yearly for weekly/monthly/quarterly."""
     if not freq:
         return None
     try:
-        step = pd.Timedelta(pd.tseries.frequencies.to_offset(freq))
-    except (ValueError, TypeError):
+        offset = pd.tseries.frequencies.to_offset(freq)
+    except ValueError:
+        return None
+    name = offset.name.upper()
+    if name.startswith("W"):
+        return 52 if offset.n == 1 else None
+    if name.startswith("M") and offset.n == 1:
+        return 12
+    if name.startswith("Q") and offset.n == 1:
+        return 4
+    try:
+        step = pd.Timedelta(offset.nanos, unit="ns")
+    except (AttributeError, ValueError):
         return None
     day = pd.Timedelta("1D")
     if step < day and day % step == pd.Timedelta(0):

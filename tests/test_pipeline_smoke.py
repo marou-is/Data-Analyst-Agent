@@ -25,6 +25,39 @@ def test_infers_spec_without_hints(synthetic):
     assert report.spec.season_length == 48
 
 
+def test_superstore_is_aggregated_not_deduplicated():
+    from analyst.contracts import AnalysisConfig
+    from analyst.datasets import SUPERSTORE
+
+    report = run_analysis(SUPERSTORE.path)
+    check_report(report)
+    assert report.aggregation is not None
+    assert report.spec.target_cols == ["sales", "quantity", "discount", "profit"]
+    assert report.profile.n_rows == 1458
+    assert report.cleaning.rows_before == 9994
+    assert report.cleaning.data["sales"].sum() == pytest.approx(2296919.4883)
+    assert report.table_profile.n_rows == 9994
+
+    monthly = run_analysis(SUPERSTORE.path, config=AnalysisConfig(aggregation_freq="MS", forecast_horizon=6))
+    check_report(monthly)
+    assert monthly.profile.n_rows == 48
+
+
+@pytest.mark.parametrize(
+    ("freq", "season"),
+    [("30min", 48), ("h", 24), ("D", 7), ("W", 52), ("W-MON", 52), ("MS", 12), ("ME", 12), ("QS", 4), ("7min", None), ("YS", None)],
+)
+def test_infer_season_length(freq, season):
+    from analyst.agent.pipeline import infer_season_length
+
+    assert infer_season_length(freq) == season
+
+
+def test_synthetic_with_few_duplicates_is_not_aggregated(synthetic):
+    raw, spec, _ = synthetic
+    assert run_analysis(raw, spec=spec).aggregation is None
+
+
 def test_profile_source_accepts_upload_bytes():
     import io
 
