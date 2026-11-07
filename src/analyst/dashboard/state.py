@@ -1,26 +1,42 @@
-"""Session state and cached loading shared by the dashboard pages."""
+"""Session state, navigation and cached analysis shared by the dashboard views."""
 
 from __future__ import annotations
 
 import io
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Hashable
-
 import pandas as pd
 import streamlit as st
 
-from analyst.agent import load_source, profile_source, run_analysis, run_public_dataset
+from analyst.agent import load_source, profile_source, run_analysis
+from analyst.agent.analyst import prepare_table
 from analyst.contracts import AnalysisReport, DatasetProfile
 from analyst.datasets import SUPERSTORE
 
-RAW = "table_raw"
-FILENAME = "table_filename"
-PROFILE = "table_profile"
-SOURCE_KEY = "table_source_key"
-"""Identifies what is loaded, so a lingering upload does not overwrite a newer choice."""
+PAGES = ("Overview", "Data Explorer", "AI Analyst", "Automations")
+PAGE = "page"
+SOURCE = "source"
+"""``(file bytes, file name, sheet)`` of the active dataset."""
+DATASET_NAME = "dataset_name"
+QUESTION = "question"
+ANSWER = "answer"
+ANSWER_ERROR = "answer_error"
+AUTOMATIONS = "automations"
 
 EXCEL_SUFFIXES = (".xlsx", ".xls")
 UPLOAD_TYPES = ["csv", "xlsx", "xls", "parquet"]
+SAMPLE_NAME = "Superstore sample"
+
+
+@dataclass(frozen=True)
+class Workspace:
+    name: str
+    raw: pd.DataFrame
+    profile: DatasetProfile
+    table: pd.DataFrame
+    """Clean table used for business answers (see ``agent.analyst.prepare_table``)."""
+    report: AnalysisReport | None
+    report_error: str | None
 
 
 @st.cache_data(show_spinner="Loading and profiling...", max_entries=8)
@@ -28,6 +44,17 @@ def load_table(data: bytes, filename: str, sheet_name: str | int = 0) -> tuple[p
     """Raw frame and profile of a file given as bytes."""
     raw = load_source(io.BytesIO(data), filename=filename, sheet_name=sheet_name)
     return raw, profile_source(raw, filename=filename)
+
+
+@st.cache_data(show_spinner="Analysing your data...", max_entries=4)
+def analyze(data: bytes, filename: str, sheet_name: str | int = 0) -> tuple[pd.DataFrame, AnalysisReport | None, str | None]:
+    """Clean table plus the full analysis report, or the reason the analysis could not run."""
+    raw, profile = load_table(data, filename, sheet_name)
+    table = prepare_table(raw, profile)
+    try:
+        return table, run_analysis(raw, filename=filename), None
+    except Exception as exc:  # noqa: BLE001 - profile-only datasets are still useful
+        return table, None, str(exc)
 
 
 @st.cache_data(max_entries=8)
@@ -39,36 +66,32 @@ def is_excel(filename: str) -> bool:
     return Path(filename).suffix.lower() in EXCEL_SUFFIXES
 
 
-def set_table(raw: pd.DataFrame, profile: DatasetProfile, filename: str, source_key: Hashable) -> None:
-    st.session_state[RAW] = raw
-    st.session_state[PROFILE] = profile
-    st.session_state[FILENAME] = filename
-    st.session_state[SOURCE_KEY] = source_key
+def init() -> None:
+    """Default page and the Superstore sample on first visit."""
+    st.session_state.setdefault(PAGE, PAGES[0])
+    st.session_state.setdefault(AUTOMATIONS, [])
+    st.session_state.setdefault(ANSWER, None)
+    if SOURCE not in st.session_state:
+        load_sample()
+
+
+def set_source(data: bytes, filename: str, sheet: str | int, name: str) -> None:
+    st.session_state[SOURCE] = (data, filename, sheet)
+    st.session_state[DATASET_NAME] = name
+    st.session_state[ANSWER] = None
 
 
 def load_sample() -> None:
-    """Load the Superstore sample into session state (button callback)."""
     path = SUPERSTORE.path
-    raw, profile = load_table(path.read_bytes(), path.name)
-    set_table(raw, profile, path.name, ("sample", SUPERSTORE.name))
+    set_source(path.read_bytes(), path.name, 0, SAMPLE_NAME)
 
 
-def loaded_source_key() -> Hashable | None:
-    return st.session_state.get(SOURCE_KEY)
+def workspace() -> Workspace:
+    data, filename, sheet = st.session_state[SOURCE]
+    raw, profile = load_table(data, filename, sheet)
+    table, report, error = analyze(data, filename, sheet)
+    return Workspace(st.session_state[DATASET_NAME], raw, profile, table, report, error)
 
 
-def current_table() -> tuple[pd.DataFrame, DatasetProfile, str] | None:
-    """The loaded raw frame, its profile and file name, if any."""
-    if PROFILE not in st.session_state:
-        return None
-    return st.session_state[RAW], st.session_state[PROFILE], st.session_state[FILENAME]
-
-
-@st.cache_data(show_spinner="Running analysis...", max_entries=4)
-def analyze_public(name: str) -> AnalysisReport:
-    return run_public_dataset(name)
-
-
-@st.cache_data(show_spinner="Running analysis...", max_entries=4)
-def analyze_upload(data: bytes, filename: str) -> AnalysisReport:
-    return run_analysis(io.BytesIO(data), filename=filename)
+def go_to(page: str) -> None:
+    st.session_state[PAGE] = page

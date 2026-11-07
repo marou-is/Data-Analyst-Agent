@@ -27,6 +27,7 @@ Stage signatures (implemented by the workstreams)
 * ``ml.anomaly.detect_anomalies(clean_df, spec, target_col, config, labels=None) -> AnomalyResult``
 * ``ml.row_anomaly.detect_row_anomalies(table, profile, config) -> RowAnomalyResult``
 * ``ml.forecast.forecast(clean_df, spec, target_col, config) -> ForecastResult``
+* ``agent.analyst.answer_question(question, table, profile, report=None) -> AnalystAnswer``
 * ``agent.load_source(source, filename=None, sheet_name=0) -> pd.DataFrame``  raw frame
 * ``agent.profile_source(source, filename=None, sheet_name=0) -> DatasetProfile``
 
@@ -352,6 +353,24 @@ class RowAnomalyResult(_Model):
     @property
     def n_anomalies(self) -> int:
         return int(self.frame["is_anomaly"].sum())
+
+
+class AnalystAnswer(_Model):
+    """Answer to a natural-language question, with the evidence behind it.
+
+    Produced by ``agent.analyst.answer_question``; a future LLM agent must return
+    the same type so the dashboard does not change."""
+
+    question: str
+    intent: Literal["breakdown", "trend", "anomalies", "quality", "forecast", "overview"]
+    summary: str
+    evidence: list[str] = Field(default_factory=list)
+    table: pd.DataFrame | None = None
+    """Supporting numbers; for ``chart`` the first column is x and the second y."""
+    chart: Literal["bar", "line"] | None = None
+    metric: str | None = None
+    """Source column the answer is about (e.g. ``"Sales"``), if any."""
+    engine: str = "rule-based"
 
 
 class Insight(_Model):

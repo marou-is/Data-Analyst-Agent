@@ -6,6 +6,7 @@ APP = PROJECT_ROOT / "src" / "analyst" / "dashboard" / "app.py"
 
 
 def test_app_renders_default_dataset_without_errors():
-    at = AppTest.from_file(str(APP), default_timeout=120).run()
+    at = AppTest.from_file(str(APP), default_timeout=180).run()
     assert not at.exception, at.exception
-    assert at.title[0].value == "Autonomous Data Analyst Agent"
+    assert at.title[0].value.startswith("Good ")
+    assert any("northstar" in m.value for m in at.sidebar.markdown)

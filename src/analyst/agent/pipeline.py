@@ -52,7 +52,7 @@ def run_analysis(
         table, aggregation, spec, cleaning = _aggregate_transactions(raw, spec, table_profile, config)
         quality = table_profile.quality
         try:
-            row_anomalies = detect_row_anomalies(table, table_profile, _with_margin_ratio(config, table_profile))
+            row_anomalies = detect_row_anomalies(table, table_profile, with_margin_ratio(config, table_profile))
         except Exception as exc:  # noqa: BLE001 - keep the report usable
             warnings.append(f"row anomaly detection failed: {exc}")
     else:
@@ -148,7 +148,7 @@ def margin_ratio(profile: DatasetProfile) -> list[str] | None:
     return [profit, revenue] if profit and revenue and profit != revenue else None
 
 
-def _with_margin_ratio(config: AnalysisConfig, profile: DatasetProfile) -> AnalysisConfig:
+def with_margin_ratio(config: AnalysisConfig, profile: DatasetProfile) -> AnalysisConfig:
     pair = margin_ratio(profile)
     if pair is None or "ratios" in config.row_anomaly_params:
         return config
